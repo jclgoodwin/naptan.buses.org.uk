@@ -36,6 +36,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
+    - id: cache-naptan
+      uses: actions/cache@v3
+      with:
+        path: naptan.xml
+
       # Runs a single command using the runners shell
       - name: Run naptan.py
         run: python naptan.py
