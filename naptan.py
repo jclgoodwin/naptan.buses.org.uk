@@ -1,4 +1,5 @@
-# import io
+import json
+from bng_latlon import OSGB36toWGS84
 import shutil
 import shapely
 import requests
@@ -22,7 +23,7 @@ def download_naptan(path):
 
 
 def get_location(element):
-    print(ET.tostring(element))
+    # print(ET.tostring(element))
     longitude = element.findtext("Translation/Longitude")
     latitude = element.findtext("Translation/Latitude")
 
@@ -33,10 +34,12 @@ def get_location(element):
     if longitude is not None:
         return shapely.from_wkt(f"POINT({longitude} {latitude})")
 
-    easting = element.findtext("Easting")
-    northing = element.findtext("Northing")
-    foo = shapely.from_wkt(f"POINT({easting} {northing})")
-    print(foo, foo.crs)
+    easting = int(element.findtext("Easting"))
+    northing = int(element.findtext("Northing"))
+
+    latitude, longitude = OSGB36toWGS84(easting, northing)
+
+    return shapely.from_wkt(f"POINT({longitude} {latitude})")
 
 
 def main():
@@ -62,6 +65,8 @@ def main():
     # tar_file_path.touch()
     # tar_file = tarfile.open(tar_file_path, "w")
 
+    stops = []
+
     for event, element in iterator:
 
         # remove namespace crap to make our life easier
@@ -85,8 +90,7 @@ def main():
             with path.open("wb") as open_file:
                 open_file.write(xml)
 
-            foo = get_location(element.find("Place/Location"))
-            print(foo)
+            location = get_location(element.find("Place/Location"))
 
             # tarinfo = tarfile.TarInfo(name=f"{atco_code}.xml")
             # tarinfo.size = len(xml)
@@ -94,6 +98,14 @@ def main():
             # tar_file.addfile(tarinfo, io.BytesIO(xml))
 
             element.clear()
+
+            stops.append((atco_code, (location.x, location.y)))
+
+    with open(site_dir / "stops.json", "w") as fp:
+        json.dump(stops, fp)
+
+    shutil.copy("index.html", site_dir)
+    shutil.copy("js.js", site_dir)
 
     #     by_admin_area = {}
 

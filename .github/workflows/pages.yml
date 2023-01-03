@@ -42,7 +42,7 @@ jobs:
           key: naptan
           path: naptan.xml
 
-      - run: poetry install
+      - run: pip install shapely bng_latlon
 
       - run: python naptan.py
 
