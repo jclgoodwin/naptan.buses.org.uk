@@ -12,7 +12,7 @@ def download_naptan(path):
     params = {"dataFormat": "xml"}
 
     # for testing purposes, the full national dataset is a bit big
-    params["atcoAreaCodes"] = "030,290"
+    params["atcoAreaCodes"] = "030,290,639"
 
     response = requests.get(url, params, timeout=60, stream=True)
     print(response.headers)

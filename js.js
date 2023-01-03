@@ -21,10 +21,14 @@ fetch("stops.json").then(response => response.json()).then(features => {
 
     svg.selectAll("path")
         .data(features)
-        .enter().append("circle")
-        .attr('cx', d => projection(d[1])[0])
-        .attr('cy', d => projection(d[1])[1])
-        .attr('r', 2)
-        .attr("title", d => d[0]);
+        .enter()
+        .append("svg:a")
+            .attr("xlink:href", d => `/stops/${d[0]}`)
+        .append("circle")
+            .attr('cx', d => projection(d[1])[0])
+            .attr('cy', d => projection(d[1])[1])
+            .attr('r', 2);
+        // .append("title").text(d => d[0])
+        ;
 
 });
