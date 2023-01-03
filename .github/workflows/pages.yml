@@ -38,6 +38,7 @@ jobs:
 
       - id: cache-naptan
         uses: actions/cache@v3
+        key: naptan
         with:
           path: naptan.xml
 
