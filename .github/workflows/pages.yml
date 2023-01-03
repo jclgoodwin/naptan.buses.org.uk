@@ -38,8 +38,8 @@ jobs:
 
       - id: cache-naptan
         uses: actions/cache@v3
-        key: naptan
         with:
+          key: naptan
           path: naptan.xml
 
       # Runs a single command using the runners shell
