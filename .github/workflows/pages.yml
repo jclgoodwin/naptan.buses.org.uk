@@ -42,9 +42,9 @@ jobs:
           key: naptan
           path: naptan.xml
 
-      # Runs a single command using the runners shell
-      - name: Run naptan.py
-        run: python naptan.py
+      - run: poetry install
+
+      - run: python naptan.py
 
       - uses: actions/upload-pages-artifact@v1
 
