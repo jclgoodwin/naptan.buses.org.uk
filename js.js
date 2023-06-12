@@ -4,7 +4,7 @@ fetch("stops.json").then(response => response.json()).then(features => {
     var svg = d3.select("#map");
 
     var projection = d3.geoMercator().fitExtent(
-        [[0, 0], [800, 1200]],
+        [[0, 0], [1200, 800]],
         {
             type: "FeatureCollection",
             features: features.map(feature => {

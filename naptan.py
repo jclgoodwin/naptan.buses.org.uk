@@ -1,7 +1,6 @@
 import json
 from bng_latlon import OSGB36toWGS84
 import shutil
-import shapely
 import requests
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -11,8 +10,8 @@ def download_naptan(path):
     url = "https://naptan.api.dft.gov.uk/v1/access-nodes"
     params = {"dataFormat": "xml"}
 
-    # for testing purposes, the full national dataset is a bit big
-    params["atcoAreaCodes"] = "030,290,639"
+    # # for testing purposes, the full national dataset is a bit big
+    # params["atcoAreaCodes"] = "030,290,639"
 
     response = requests.get(url, params, timeout=60, stream=True)
     print(response.headers)
@@ -32,14 +31,31 @@ def get_location(element):
     #     latitude = element.findtext("Latitude")
 
     if longitude is not None:
-        return shapely.from_wkt(f"POINT({longitude} {latitude})")
+        return (longitude, latitude)
 
     easting = int(element.findtext("Easting"))
     northing = int(element.findtext("Northing"))
 
     latitude, longitude = OSGB36toWGS84(easting, northing)
 
-    return shapely.from_wkt(f"POINT({longitude} {latitude})")
+    return (longitude, latitude)
+
+
+def get_element(element):
+    # remove namespace crap to make our life easier
+    element.tag = element.tag.removeprefix("{http://www.naptan.org.uk/}")
+    return element
+
+
+def get_stop(element):
+    atco_code = element.findtext("AtcoCode")
+    assert atco_code
+
+    location = get_location(element.find("Place/Location"))
+
+    element.clear()
+
+    return (atco_code, location)
 
 
 def main():
@@ -47,6 +63,8 @@ def main():
 
     if not path.exists():
         download_naptan(path)
+
+    print("1")
 
     iterator = ET.iterparse(path)
 
@@ -56,56 +74,26 @@ def main():
 
     site_dir.mkdir()
 
-    stops_dir = site_dir / "stops"
-    stops_dir.mkdir()
+    print("2")
 
-    # tar_file_path = Path("github-pages.tar.gz")
-    # if tar_file_path.exists():
-    #     tar_file_path.unlink()
-    # tar_file_path.touch()
-    # tar_file = tarfile.open(tar_file_path, "w")
+    elements = (get_element(element) for _, element in iterator)
+    stops = (element for element in elements if element.tag == "StopPoint")
 
-    stops = []
+    # data_frame = pandas.GeoDataFrame.from_features(
+    #     get_stop(stops_dir, element) for element in stops
+    # )
 
-    for event, element in iterator:
+    # print(data_frame)
 
-        # remove namespace crap to make our life easier
-        element.tag = element.tag.removeprefix("{http://www.naptan.org.uk/}")
-
-        # if event == "start":
-        #     # if element.tag == "{http://www.naptan.org.uk/}NaPTAN":
-        #     #     modified_at = get_datetime(element.attrib["ModificationDateTime"])
-        #     #     if modified_at == source.datetime:
-        #     #         return
-
-        #     #     source.datetime = modified_at
-
-        if element.tag == "StopPoint":
-            atco_code = element.findtext("AtcoCode")
-            assert atco_code
-
-            xml = ET.tostring(element)
-
-            path = stops_dir / f"{atco_code}.xml"
-            with path.open("wb") as open_file:
-                open_file.write(xml)
-
-            location = get_location(element.find("Place/Location"))
-
-            # tarinfo = tarfile.TarInfo(name=f"{atco_code}.xml")
-            # tarinfo.size = len(xml)
-
-            # tar_file.addfile(tarinfo, io.BytesIO(xml))
-
-            element.clear()
-
-            stops.append((atco_code, (location.x, location.y)))
+    stops = [get_stop(element) for element in stops]
 
     with open(site_dir / "stops.json", "w") as fp:
         json.dump(stops, fp)
 
     shutil.copy("index.html", site_dir)
     shutil.copy("js.js", site_dir)
+
+    print("3")
 
     #     by_admin_area = {}
 
